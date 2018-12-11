@@ -1,2 +1,2 @@
-# neural-artistic-style
-Deep Learning Final Project
+# -neural-artistic-style-transfer
+ECBM4040
