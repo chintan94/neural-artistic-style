@@ -1,68 +1,69 @@
 ## this is the main style transfer engine
+import input_processor
 
 
-def run_style_transfer():
+def run_style_transfer(content_image_path,style_image_path):
 
     ## this is the main function
 
-    ## call input_processor.prepare_inputs_for_style_transfer and call stylize
+    content_image,style_image,iterations = input_processor.prepare_inputs_for_style_transfer(style_image_path, content_image_path)
 
 
-    ### part of the original code #######
-    #     for iteration, image, loss_vals in stylize(
-    #         network=options.network,
-    #         initial=initial,
-    #         initial_noiseblend=options.initial_noiseblend,
-    #         content=content_image,
-    #         styles=style_images,
-    #         preserve_colors=options.preserve_colors,
-    #         iterations=options.iterations,
-    #         content_weight=options.content_weight,
-    #         content_weight_blend=options.content_weight_blend,
-    #         style_weight=options.style_weight,
-    #         style_layer_weight_exp=options.style_layer_weight_exp,
-    #         style_blend_weights=style_blend_weights,
-    #         tv_weight=options.tv_weight,
-    #         learning_rate=options.learning_rate,
-    #         beta1=options.beta1,
-    #         beta2=options.beta2,
-    #         epsilon=options.epsilon,
-    #         pooling=options.pooling,
-    #         print_iterations=options.print_iterations,
-    #         checkpoint_iterations=options.checkpoint_iterations,
-    # ):
-    #     if (image is not None) and (options.checkpoint_output is not None):
-    #         imsave(fmt_imsave(options.checkpoint_output, iteration), image)
-    #     if (loss_vals is not None) \
-    #             and (options.progress_plot or options.progress_write):
-    #         if loss_arrs is None:
-    #             itr = []
-    #             loss_arrs = OrderedDict((key, []) for key in loss_vals.keys())
-    #         for key, val in loss_vals.items():
-    #             loss_arrs[key].append(val)
-    #         itr.append(iteration)
-    #
-    # imsave(options.output, image)
-    #
-    # if options.progress_write:
-    #     fn = "{}/progress.txt".format(os.path.dirname(options.output))
-    #     tmp = np.empty((len(itr), len(loss_arrs) + 1), dtype=float)
-    #     tmp[:, 0] = np.array(itr)
-    #     for ii, val in enumerate(loss_arrs.values()):
-    #         tmp[:, ii + 1] = np.array(val)
-    #     np.savetxt(fn, tmp, header=' '.join(['itr'] + list(loss_arrs.keys())))
-    #
-    # if options.progress_plot:
-    #     import matplotlib
-    #     matplotlib.use('Agg')
-    #     from matplotlib import pyplot as plt
-    #     fig, ax = plt.subplots()
-    #     for key, val in loss_arrs.items():
-    #         ax.semilogy(itr, val, label=key)
-    #     ax.legend()
-    #     ax.set_xlabel("iterations")
-    #     ax.set_ylabel("loss")
-    #     fig.savefig("{}/progress.png".format(os.path.dirname(options.output)))
+
+        for iteration, image, loss_vals in stylize(
+            network=options.network,
+            initial=initial,
+            initial_noiseblend=options.initial_noiseblend,
+            content=content_image,
+            styles=style_images,
+            preserve_colors=options.preserve_colors,
+            iterations=options.iterations,
+            content_weight=options.content_weight,
+            content_weight_blend=options.content_weight_blend,
+            style_weight=options.style_weight,
+            style_layer_weight_exp=options.style_layer_weight_exp,
+            style_blend_weights=style_blend_weights,
+            tv_weight=options.tv_weight,
+            learning_rate=options.learning_rate,
+            beta1=options.beta1,
+            beta2=options.beta2,
+            epsilon=options.epsilon,
+            pooling=options.pooling,
+            print_iterations=options.print_iterations,
+            checkpoint_iterations=options.checkpoint_iterations,
+    ):
+        if (image is not None) and (options.checkpoint_output is not None):
+            imsave(fmt_imsave(options.checkpoint_output, iteration), image)
+        if (loss_vals is not None) \
+                and (options.progress_plot or options.progress_write):
+            if loss_arrs is None:
+                itr = []
+                loss_arrs = OrderedDict((key, []) for key in loss_vals.keys())
+            for key, val in loss_vals.items():
+                loss_arrs[key].append(val)
+            itr.append(iteration)
+
+    imsave(options.output, image)
+
+    if options.progress_write:
+        fn = "{}/progress.txt".format(os.path.dirname(options.output))
+        tmp = np.empty((len(itr), len(loss_arrs) + 1), dtype=float)
+        tmp[:, 0] = np.array(itr)
+        for ii, val in enumerate(loss_arrs.values()):
+            tmp[:, ii + 1] = np.array(val)
+        np.savetxt(fn, tmp, header=' '.join(['itr'] + list(loss_arrs.keys())))
+
+    if options.progress_plot:
+        import matplotlib
+        matplotlib.use('Agg')
+        from matplotlib import pyplot as plt
+        fig, ax = plt.subplots()
+        for key, val in loss_arrs.items():
+            ax.semilogy(itr, val, label=key)
+        ax.legend()
+        ax.set_xlabel("iterations")
+        ax.set_ylabel("loss")
+        fig.savefig("{}/progress.png".format(os.path.dirname(options.output)))
 
 
 def stylize(network, initial, initial_noiseblend, content, styles, preserve_colors, iterations,

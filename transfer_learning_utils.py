@@ -2,7 +2,7 @@
 
 import tensorflow as tf
 import numpy as np
-import scipy.io
+import scipy.io as spio
 
 LAYERS = [
     'conv1_1', 'relu1_1', 'conv1_2', 'relu1_2', 'pool1',
@@ -18,29 +18,38 @@ LAYERS = [
     'conv5_1', 'relu5_1', 'conv5_2', 'relu5_2', 'conv5_3',
     'relu5_3', 'conv5_4', 'relu5_4'] ## re-format this
 
-
-def read_weights(weight_file_path):
-    '''
-    return weights, channel mean
-
-    :param weigh_file_path:
-    :return:
-    '''
-
-
-    return 0
-
 ## always use avg pooling
-def create_pretrained_net(weights,input_image):
+def create_pretrained_net(weight_file_path='imagenet-vgg-verydeep-19.mat',input_image):
     '''
 
     :return:
     '''
+
+    vgg = spio.loadmat(weight_file_path)
+    mean_channel = vgg['meta']['normalization'][0][0][0][0][2][0][0]
+    weights = vgg[0]
+    net = {}
+    current = input_image
+    for i, name in enumerate(LAYERS):
+        kind = name[:4]
+        if kind == 'conv':
+            kernels, bias = weights[i][0][0][2][0]
+            kernels = np.transpose(kernels, (1, 0, 2, 3))
+            bias = bias.reshape(-1)
+            current = create_conv_layer(current, kernels, bias)
+        elif kind == 'relu':
+            current = tf.nn.relu(current)
+        elif kind == 'pool':
+            current = create_pooling_layer(current)
+        net[name] = current
+
+    assert len(net) == len(LAYERS)
+    return net, mean_channel
 
 
 def pre_process_image(image,mean_channel):
 
-    return image
+    return image - mean_channel
 
 def process_output(image,mean_channel):
     '''
@@ -50,4 +59,15 @@ def process_output(image,mean_channel):
     :return:
     '''
 
-    return image
+    return image + mean_channel
+
+
+def create_conv_layer(input, weights, bias):
+    conv = tf.nn.conv2d(input, tf.constant(weights), strides=(1, 1, 1, 1),
+            padding='SAME')
+    return tf.nn.bias_add(conv, bias)
+
+
+def create_pooling_layer(input):
+    return tf.nn.avg_pool(input, ksize=(1, 2, 2, 1), strides=(1, 2, 2, 1),
+            padding='SAME')
