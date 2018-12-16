@@ -10,49 +10,37 @@ CONTENT_LAYERS = ('relu4_2', 'relu5_2')
 STYLE_LAYERS = ('relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1')
 
 
-def extract_loss(loss_store):
-    return OrderedDict((key, val.eval()) for key, val in loss_store.items())
+def extract_loss(loss_dict):
+    return OrderedDict((key, val.eval()) for key, val in loss_dict.items())
 
 
-def print_loss(loss_vals):
-    for key, val in loss_vals.items():
-        print('{:>13s} {:g}'.format(key + ' loss:', val))
+##turned off printing
+def print_loss(loss_dict, is_active = False):
+
+    if(~is_active):
+        return
+
+    for key, val in loss_dict.items():
+        print(str(key)+' loss: '+str(val))
 
 
-def run_style_transfer(content_image_path, style_image_path, output_image_path):
-    loss_arrs = None
-    content_image, style_image, iterations = input_processor.prepare_inputs_for_style_transfer(style_image_path,
-                                                                                               content_image_path)
+def run_style_transfer(content_image_path, style_image_path, iterations, output_image_path):
+    loss_ts = []
+    content_image, style_image = input_processor.prepare_inputs_for_style_transfer(style_image_path,
+                                                                                   content_image_path)
 
-    for iteration, image, loss_values in artistic_style_transfer(
+    for iteration, image, best_loss in artistic_style_transfer(
             content=content_image,
             styles=style_image,
             iterations=iterations,
     ):
-        if (loss_values is not None):
-            itr = []
-            loss_arrs = OrderedDict((key, []) for key in loss_values.keys())
-            for key, val in loss_values.items():
-                loss_arrs[key].append(val)
-            itr.append(iteration)
+            loss_ts.append(best_loss)
 
-    stylized_image = input_processor.save_image(output_image_path, image)
-
-    import matplotlib
-    matplotlib.use('Agg')
-    from matplotlib import pyplot as plt
-    fig, ax = plt.subplots()
-    for key, val in loss_arrs.items():
-        ax.semilogy(itr, val, label=key)
-    ax.legend()
-    ax.set_xlabel("iterations")
-    ax.set_ylabel("loss")
-    plt.show()
-
-    return stylized_image
+    input_processor.save_image(output_image_path, image)
+    return loss_ts
 
 
-def artistic_style_transfer(content, styles, iterations, checkpoint_iterations=50):
+def artistic_style_transfer(content, styles, iterations, checkpoint_iterations=1):
     """
 
     :param content: content image
@@ -107,7 +95,7 @@ def artistic_style_transfer(content, styles, iterations, checkpoint_iterations=5
         image = tf.Variable(initial)
         net, vgg_mean_pixel = transfer_learning.create_pretrained_net(image)
 
-        content_loss, style_loss = loss_optimize.get_content_and_style_loss(style_features, style_layers_weights,
+        content_loss, style_loss = loss_optimize.get_content_and_style_loss(net, style_features, style_layers_weights,
                                                                             content_features, shape)
 
         loss = content_loss + style_loss
@@ -132,7 +120,7 @@ def artistic_style_transfer(content, styles, iterations, checkpoint_iterations=5
                 loss_vals = None
                 if (i % checkpoint_iterations == 0) or last_iteration:
                     loss_vals = extract_loss(loss_ordered_dict)
-                    print('Running iteration:' + str(i + 1))
+                    ##print('Running iteration:' + str(i + 1))
                     print_loss(loss_vals)
 
                     this_loss = loss.eval()
@@ -146,4 +134,4 @@ def artistic_style_transfer(content, styles, iterations, checkpoint_iterations=5
                 else:
                     output_image = None
 
-                yield i + 1, output_image, loss_vals
+                yield i + 1, output_image, best_loss

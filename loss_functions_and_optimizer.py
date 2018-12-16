@@ -5,16 +5,11 @@ import transfer_learning_utils as transfer_learning
 import tensorflow as tf
 from functools import reduce
 
-
 CONTENT_LAYERS = ('relu4_2', 'relu5_2')
 STYLE_LAYERS = ('relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1')
 
 
-def get_content_and_style_loss(style_features, style_layers_weights, content_features, shape):
-    initial = tf.random_normal(shape) * 0.256
-    image = tf.Variable(initial)
-    net, vgg_mean_pixel = transfer_learning.create_pretrained_net(image)
-
+def get_content_and_style_loss(net, style_features, style_layers_weights, content_features, shape):
     # content loss
     content_layers_weights = {}
     content_layers_weights['relu4_2'] = 1.0

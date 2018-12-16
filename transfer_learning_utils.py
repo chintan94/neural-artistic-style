@@ -4,7 +4,7 @@ import tensorflow as tf
 import numpy as np
 import scipy.io as spio
 
-## Standard layers in a VGG-19
+## Standard layers in VGG-19
 
 LAYERS = [
     'conv1_1', 'relu1_1', 'conv1_2', 'relu1_2', 'pool1',
@@ -24,7 +24,6 @@ LAYERS = [
 ## always use avg pooling
 def create_pretrained_net(input_image, weight_file_path='imagenet-vgg-verydeep-19.mat'):
     '''
-
     loads a pre-trained VGG-19
     :return: net, mean_pixels
     '''
@@ -32,19 +31,18 @@ def create_pretrained_net(input_image, weight_file_path='imagenet-vgg-verydeep-1
     vgg = spio.loadmat(weight_file_path)
     mean_channel = vgg['meta']['normalization'][0][0][0][0][2][0][0]
     weights = vgg['layers'][0]
-    net = {}
+    net = {} ## map to store different layers
     current = input_image
     for i, name in enumerate(LAYERS):
-        kind = name[:4]
-        if kind == 'conv':
-            kernels, bias = weights[i][0][0][2][0]
-            print(type(kernels), type(bias))
-            kernels = np.transpose(kernels, (1, 0, 2, 3))
+        layer_type = name[:4]
+        if layer_type == 'conv':
+            filter_weights, bias = weights[i][0][0][2][0]
+            filter_weights = np.transpose(filter_weights, (1, 0, 2, 3))
             bias = bias.reshape(-1)
-            current = create_conv_layer(current, kernels, bias)
-        elif kind == 'relu':
+            current = create_conv_layer(current, filter_weights, bias)
+        elif layer_type == 'relu':
             current = tf.nn.relu(current)
-        elif kind == 'pool':
+        elif layer_type == 'pool':
             current = create_pooling_layer(current)
         net[name] = current
 
@@ -74,11 +72,23 @@ def process_output(image, mean_channel):
 
 
 def create_conv_layer(input, weights, bias):
+    '''
+    Creates a **static** conv layer
+    :param input:
+    :param weights:
+    :param bias:
+    :return:
+    '''
     conv = tf.nn.conv2d(input, tf.constant(weights), strides=(1, 1, 1, 1),
                         padding='SAME')
     return tf.nn.bias_add(conv, bias)
 
 
 def create_pooling_layer(input):
+    '''
+    Creates a avg pooling layer
+    :param input:
+    :return:
+    '''
     return tf.nn.avg_pool(input, ksize=(1, 2, 2, 1), strides=(1, 2, 2, 1),
                           padding='SAME')
