@@ -6,7 +6,6 @@ import tensorflow as tf
 import numpy as np
 from collections import OrderedDict
 
-
 CONTENT_LAYERS = ('relu4_2', 'relu5_2')
 STYLE_LAYERS = ('relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1')
 
@@ -21,7 +20,6 @@ def print_loss(loss_vals):
 
 
 def run_style_transfer(content_image_path, style_image_path, output_image_path):
-
     loss_arrs = None
     content_image, style_image, iterations = input_processor.prepare_inputs_for_style_transfer(style_image_path,
                                                                                                content_image_path)
@@ -105,6 +103,10 @@ def artistic_style_transfer(content, styles, iterations, checkpoint_iterations=5
 
     with tf.Graph().as_default():
 
+        initial = tf.random_normal(shape) * 0.256
+        image = tf.Variable(initial)
+        net, vgg_mean_pixel = transfer_learning.create_pretrained_net(image)
+
         content_loss, style_loss = loss_optimize.get_content_and_style_loss(style_features, style_layers_weights,
                                                                             content_features, shape)
 
@@ -130,7 +132,7 @@ def artistic_style_transfer(content, styles, iterations, checkpoint_iterations=5
                 loss_vals = None
                 if (i % checkpoint_iterations == 0) or last_iteration:
                     loss_vals = extract_loss(loss_ordered_dict)
-                    print('Running iteration:'+ str(i+1))
+                    print('Running iteration:' + str(i + 1))
                     print_loss(loss_vals)
 
                     this_loss = loss.eval()
@@ -138,7 +140,8 @@ def artistic_style_transfer(content, styles, iterations, checkpoint_iterations=5
                         best_loss = this_loss
                         best_stylized_image = image.eval()
 
-                    output_image = transfer_learning.process_output(best_stylized_image.reshape(shape[1:]), vgg_mean_pixel)
+                    output_image = transfer_learning.process_output(best_stylized_image.reshape(shape[1:]),
+                                                                    vgg_mean_pixel)
 
                 else:
                     output_image = None
