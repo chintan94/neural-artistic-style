@@ -1,4 +1,8 @@
+#################################################################################
 ## this is the main style transfer engine
+## Inspiration for the structure of the code was taken from the following sources:
+## https://www.anishathalye.com/2015/12/19/an-ai-that-can-mimic-any-artist/
+#################################################################################
 import input_processor
 import transfer_learning_utils as transfer_learning
 import loss_functions_and_optimizer as loss_optimize
@@ -8,20 +12,6 @@ from collections import OrderedDict
 
 CONTENT_LAYERS = ('relu4_2', 'relu5_2')
 STYLE_LAYERS = ('relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1')
-
-
-def extract_loss(loss_dict):
-    return OrderedDict((key, val.eval()) for key, val in loss_dict.items())
-
-
-##turned off printing
-def print_loss(loss_dict, is_active = False):
-
-    if(~is_active):
-        return
-
-    for key, val in loss_dict.items():
-        print(str(key)+' loss: '+str(val))
 
 
 def run_style_transfer(content_image_path, style_image_path, iterations, output_image_path):
@@ -34,7 +24,7 @@ def run_style_transfer(content_image_path, style_image_path, iterations, output_
             styles=style_image,
             iterations=iterations,
     ):
-            loss_ts.append(best_loss)
+        loss_ts.append(best_loss)
 
     input_processor.save_image(output_image_path, image)
     return loss_ts
@@ -59,6 +49,7 @@ def artistic_style_transfer(content, styles, iterations, checkpoint_iterations=1
     for style_layer in STYLE_LAYERS:
         style_layers_weights[style_layer] = layer_weight
 
+    # computing weights
     layer_weights_sum = 0
     for style_layer in STYLE_LAYERS:
         layer_weights_sum += style_layers_weights[style_layer]
@@ -120,7 +111,6 @@ def artistic_style_transfer(content, styles, iterations, checkpoint_iterations=1
                 loss_vals = None
                 if (i % checkpoint_iterations == 0) or last_iteration:
                     loss_vals = extract_loss(loss_ordered_dict)
-                    ##print('Running iteration:' + str(i + 1))
                     print_loss(loss_vals)
 
                     this_loss = loss.eval()
@@ -135,3 +125,16 @@ def artistic_style_transfer(content, styles, iterations, checkpoint_iterations=1
                     output_image = None
 
                 yield i + 1, output_image, best_loss
+
+
+def extract_loss(loss_dict):
+    return OrderedDict((key, val.eval()) for key, val in loss_dict.items())
+
+
+##turned off printing
+def print_loss(loss_dict, is_active=False):
+    if (~is_active):
+        return
+
+    for key, val in loss_dict.items():
+        print(str(key) + ' loss: ' + str(val))
